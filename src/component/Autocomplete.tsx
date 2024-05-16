@@ -16,6 +16,8 @@ const Autocomplete: React.FC = () => {
   const [isSelected, setIsSelected] = useState<boolean>(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeItemRef = useRef(null);
 
   const throttle = (func: Function, limit: number): Function => {
     let inThrottle: boolean = false;
@@ -64,13 +66,29 @@ const Autocomplete: React.FC = () => {
     }
   }, [input, isSelected, getCountryData]);
 
+  useEffect(() => {
+    if (activeItemRef.current && (activeItemRef.current as HTMLElement)) {
+      (activeItemRef.current as HTMLElement).scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [activeIndex]);
+
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "ArrowDown") {
       setSelectedIndex((prevIndex) =>
         Math.min(prevIndex + 1, countryList.length - 1)
       );
+      setActiveIndex(
+        (prevActiveIndex) => (prevActiveIndex + 1) % countryList.length
+      );
     } else if (event.key === "ArrowUp") {
       setSelectedIndex((prevIndex) => Math.max(prevIndex - 1, 0));
+      setActiveIndex(
+        (prevActiveIndex) =>
+          (prevActiveIndex + countryList.length - 1) % countryList.length
+      );
     } else if (event.key === "Enter" && selectedIndex >= 0) {
       setSelectedCountry(countryList[selectedIndex]);
     } else if (event.key === "Escape") {
@@ -117,6 +135,8 @@ const Autocomplete: React.FC = () => {
   const clear = () => {
     setInput("");
     setCountryList([]);
+    setActiveIndex(0);
+    setSelectedIndex(-1);
   };
 
   return (
@@ -141,6 +161,7 @@ const Autocomplete: React.FC = () => {
           {countryList.map((country: Country, key) => (
             <li
               key={key}
+              ref={key === activeIndex ? activeItemRef : null}
               className={key === selectedIndex ? "selected" : ""}
               onClick={() => handleOnClickCard(country)}
             >
